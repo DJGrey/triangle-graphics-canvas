@@ -8,6 +8,36 @@ const verticalLineSeparation = defaultTriangleEdgeLength / 2;
 const horizontalPointSeparation = 1.7320508076 * defaultTriangleEdgeLength;
 const randomness = 0.2;
 
+const availableColorRanges = [
+  {
+    from: {
+      red: 242,
+      green: 144,
+      blue: 131,
+    },
+    to: {
+      red: 130,
+      green: 24,
+      blue: 5,
+    },
+  },
+  {
+    from: {
+      red: 242,
+      green: 211,
+      blue: 70,
+    },
+    to: {
+      red: 121,
+      green: 114,
+      blue: 207,
+    },
+  },
+];
+
+const colorRange =
+  availableColorRanges[Math.floor(Math.random() * availableColorRanges.length)];
+
 const cursor = {
   x: window.innerWidth / 2,
   y: window.innerHeight / 2,
@@ -113,9 +143,6 @@ function clampInt(val, min, max) {
 }
 
 function getColor(triangle) {
-  const redRange = [242, 130];
-  const greenRange = [144, 24];
-  const blueRange = [131, 5];
   var averageDistance =
     (gaussianFromCursor(triangle.points[0]).xy2d +
       gaussianFromCursor(triangle.points[1]).xy2d +
@@ -128,17 +155,26 @@ function getColor(triangle) {
 
   return `rgb(
         ${clampInt(
-          getColorValue(averageDistance, redRange) + triangle.tint.red,
+          getColorValue(averageDistance, [
+            colorRange.from.red,
+            colorRange.to.red,
+          ]) + triangle.tint.red,
           0,
           255
         )},
         ${clampInt(
-          getColorValue(averageDistance, greenRange) + triangle.tint.blue,
+          getColorValue(averageDistance, [
+            colorRange.from.green,
+            colorRange.to.green,
+          ]) + triangle.tint.green,
           0,
           255
         )},
         ${clampInt(
-          getColorValue(averageDistance, blueRange) + triangle.tint.green,
+          getColorValue(averageDistance, [
+            colorRange.from.blue,
+            colorRange.to.blue,
+          ]) + triangle.tint.blue,
           0,
           255
         )})`;
