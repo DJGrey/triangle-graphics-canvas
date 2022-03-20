@@ -68,15 +68,15 @@ addEventListener("mousemove", (e) => {
   cursor.y = e.clientY;
 });
 
-addEventListener(
-  "touchmove",
-  (e) => {
-    e.preventDefault();
-    cursor.x = e.touches[0].clientX;
-    cursor.y = e.touches[0].clientY;
-  },
-  { passive: false }
-);
+const touchEvent = (e) => {
+  e.preventDefault();
+  cursor.x = e.touches[0].clientX;
+  cursor.y = e.touches[0].clientY;
+};
+
+addEventListener("touchmove", touchEvent, { passive: false });
+
+addEventListener("touchstart", touchEvent, { passive: false });
 
 function randomIntFromInterval(min, max) {
   // min and max included
