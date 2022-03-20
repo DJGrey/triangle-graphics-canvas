@@ -74,6 +74,20 @@ function randomColor() {
         ${randomIntFromInterval(50, 200)})`;
 }
 
+function randomTint() {
+  const brightness = randomIntFromInterval(-3, 3);
+  return {
+    red: brightness,
+    green: brightness,
+    blue: brightness,
+  };
+  // return {
+  //   red: randomIntFromInterval(-5, 5),
+  //   green: randomIntFromInterval(-5, 5),
+  //   blue: randomIntFromInterval(-5, 5),
+  // };
+}
+
 function gaussianFromCursor(point) {
   const sd =
     Math.sqrt(
@@ -94,6 +108,10 @@ function gaussianFromCursor(point) {
   };
 }
 
+function clampInt(val, min, max) {
+  return Math.min(Math.max(val, min), max);
+}
+
 function getColor(triangle) {
   const redRange = [242, 130];
   const greenRange = [144, 24];
@@ -109,9 +127,21 @@ function getColor(triangle) {
   };
 
   return `rgb(
-        ${getColorValue(averageDistance, redRange)},
-        ${getColorValue(averageDistance, greenRange)},
-        ${getColorValue(averageDistance, blueRange)})`;
+        ${clampInt(
+          getColorValue(averageDistance, redRange) + triangle.tint.red,
+          0,
+          255
+        )},
+        ${clampInt(
+          getColorValue(averageDistance, greenRange) + triangle.tint.blue,
+          0,
+          255
+        )},
+        ${clampInt(
+          getColorValue(averageDistance, blueRange) + triangle.tint.green,
+          0,
+          255
+        )})`;
 }
 
 function movePoint(point) {
@@ -186,7 +216,8 @@ function makeTriangles(points) {
               points[rowIndex + 2][colIndex],
               points[rowIndex + 1][colIndex + (rowIndex % 2)],
             ],
-            color: randomColor(),
+            color: "black",
+            tint: randomTint(),
           });
         }
         if (colIndex - ((rowIndex + 1) % 2) >= 0) {
@@ -196,7 +227,8 @@ function makeTriangles(points) {
               points[rowIndex + 2][colIndex],
               points[rowIndex + 1][colIndex - ((rowIndex + 1) % 2)],
             ],
-            color: randomColor(),
+            color: "black",
+            tint: randomTint(),
           });
         }
       }
