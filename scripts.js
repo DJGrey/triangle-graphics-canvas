@@ -33,6 +33,18 @@ const availableColorRanges = [
       blue: 207,
     },
   },
+  {
+    from: {
+      red: 10,
+      green: 10,
+      blue: 10,
+    },
+    to: {
+      red: 245,
+      green: 245,
+      blue: 245,
+    },
+  },
 ];
 
 const colorRange =
