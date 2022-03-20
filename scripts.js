@@ -83,6 +83,8 @@ function randomIntFromInterval(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
+const sdController = randomIntFromInterval(3, 20);
+
 function makePoints(inWidth, inHeight) {
   var points = [];
   for (let row = 0; row <= inHeight / verticalLineSeparation + 4; row++) {
@@ -139,7 +141,7 @@ function gaussianFromCursor(point) {
   const sd =
     Math.sqrt(
       Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2)
-    ) / 10;
+    ) / sdController;
 
   return Math.pow(
     Math.E,
