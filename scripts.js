@@ -118,24 +118,23 @@ function randomTint() {
   // };
 }
 
+// Return angle in radians where 0 is horizontal right and PI/2 is vertical down.
+function angleFromCursor(point) {
+  return Math.atan((point.y - cursor.y) / (point.x - cursor.x));
+}
+
 function gaussianFromCursor(point) {
   const sd =
     Math.sqrt(
       Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2)
     ) / 10;
-  const calc = (inp, av) => Math.pow(Math.E, -Math.pow((inp - av) / sd, 2));
-  const calc2d = (inp, av) =>
-    Math.pow(
-      Math.E,
-      -1 *
-        ((Math.pow(inp.x - av.x, 2) + Math.pow(inp.y - av.y, 2)) /
-          Math.pow(sd, 2))
-    );
-  return {
-    x: calc(point.x, cursor.x),
-    y: calc(point.y, cursor.y),
-    xy2d: calc2d(point, cursor),
-  };
+
+  return Math.pow(
+    Math.E,
+    -1 *
+      ((Math.pow(point.x - cursor.x, 2) + Math.pow(point.y - cursor.y, 2)) /
+        Math.pow(sd, 2))
+  );
 }
 
 function clampInt(val, min, max) {
@@ -144,9 +143,9 @@ function clampInt(val, min, max) {
 
 function getColor(triangle) {
   var averageDistance =
-    (gaussianFromCursor(triangle.points[0]).xy2d +
-      gaussianFromCursor(triangle.points[1]).xy2d +
-      gaussianFromCursor(triangle.points[2]).xy2d) /
+    (gaussianFromCursor(triangle.points[0]) +
+      gaussianFromCursor(triangle.points[1]) +
+      gaussianFromCursor(triangle.points[2])) /
     3;
 
   const getColorValue = (distance, [fromVal, toVal]) => {
@@ -181,29 +180,25 @@ function getColor(triangle) {
 }
 
 function movePoint(point) {
-  //   var maxDistance = Math.sqrt(
-  //     Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2)
-  //   );
-  //   var distance = Math.sqrt(
-  //     Math.pow(point.x - cursor.x, 2) + Math.pow(point.y - cursor.y, 2)
-  //   );
-  //   var horizontalProportion =
-  //     Math.abs(point.x - cursor.x) /
-  //     (Math.abs(point.y - cursor.y) + Math.abs(point.x - cursor.x));
   const gaussianDistance = gaussianFromCursor(point);
+  const angle = Math.abs(angleFromCursor(point));
   return {
+    // X proportion is minimum at angle=PI/2 and 3PI/2.
+    // X proportion is maximum at angle=0 and PI
     x:
       point.x +
       Math.sign(point.x - cursor.x) *
-        Math.pow(gaussianDistance.x * gaussianDistance.xy2d, 0.5) *
-        defaultTriangleEdgeLength *
-        1,
+        gaussianDistance *
+        Math.abs((angle % Math.PI) - Math.PI / 2) *
+        defaultTriangleEdgeLength,
+    // Y proportion is minimum at angle=0 and PI
+    // Y proportion is maximum at angle=PI/2 and 3PI/2.
     y:
       point.y +
       Math.sign(point.y - cursor.y) *
-        Math.pow(gaussianDistance.y * gaussianDistance.xy2d, 0.5) *
-        defaultTriangleEdgeLength *
-        1,
+        gaussianDistance *
+        (Math.PI / 2 - Math.abs((angle % Math.PI) - Math.PI / 2)) *
+        defaultTriangleEdgeLength,
   };
 }
 
@@ -233,7 +228,6 @@ function drawTriangle(triangle) {
 }
 
 function drawTriangles(triangles) {
-  //   console.log(gaussianFromCursor(triangles[200].points[0]));
   triangles.forEach((triangle) => {
     drawTriangle(moveTrianglePoints(triangle));
   });
