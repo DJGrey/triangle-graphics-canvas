@@ -52,8 +52,8 @@ const colorRange =
   availableColorRanges[Math.floor(Math.random() * availableColorRanges.length)];
 
 const cursor = {
-  x: window.innerWidth / 2,
-  y: window.innerHeight / 2,
+  x: null,
+  y: null,
 };
 
 const canvas = document.getElementById("graphicCanvas");
@@ -64,7 +64,7 @@ ctx.canvas.height = window.innerHeight;
 const points = makePoints(window.innerWidth, window.innerHeight);
 const triangles = makeTriangles(points);
 
-addEventListener("mousemove", (e) => {
+canvas.addEventListener("mousemove", (e) => {
   cursor.x = e.clientX;
   cursor.y = e.clientY;
 });
@@ -74,6 +74,11 @@ const touchEvent = (e) => {
   cursor.x = e.touches[0].clientX;
   cursor.y = e.touches[0].clientY;
 };
+
+canvas.addEventListener("mouseleave", () => {
+  cursor.x = null;
+  cursor.y = null;
+});
 
 canvas.addEventListener("touchmove", touchEvent, { passive: false });
 
@@ -146,6 +151,9 @@ function angleFromCursor(point) {
 }
 
 function gaussianFromCursor(point) {
+  if (cursor.x === null || cursor.y === null) {
+    return 0;
+  }
   const sd =
     Math.sqrt(
       Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2)
