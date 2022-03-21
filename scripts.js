@@ -7,6 +7,7 @@ const defaultTriangleEdgeLength = 30;
 const verticalLineSeparation = defaultTriangleEdgeLength / 2;
 const horizontalPointSeparation = 1.7320508076 * defaultTriangleEdgeLength;
 const randomness = 0.2;
+var spreadSize = 7;
 
 const availableColorRanges = [
   {
@@ -74,16 +75,23 @@ const touchEvent = (e) => {
   cursor.y = e.touches[0].clientY;
 };
 
-addEventListener("touchmove", touchEvent, { passive: false });
+canvas.addEventListener("touchmove", touchEvent, { passive: false });
 
-addEventListener("touchstart", touchEvent, { passive: false });
+canvas.addEventListener("touchstart", touchEvent, { passive: false });
 
 function randomIntFromInterval(min, max) {
   // min and max included
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
-const sdController = randomIntFromInterval(3, 20);
+canvas.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  if (e.deltaY > 0 && spreadSize < 20) {
+    spreadSize += 0.25;
+  } else if (spreadSize > 2) {
+    spreadSize -= 0.25;
+  }
+});
 
 function makePoints(inWidth, inHeight) {
   var points = [];
@@ -141,7 +149,7 @@ function gaussianFromCursor(point) {
   const sd =
     Math.sqrt(
       Math.pow(window.innerWidth, 2) + Math.pow(window.innerHeight, 2)
-    ) / sdController;
+    ) / spreadSize;
 
   return Math.pow(
     Math.E,
