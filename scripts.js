@@ -7,7 +7,9 @@ const defaultTriangleEdgeLength = 30;
 const verticalLineSeparation = defaultTriangleEdgeLength / 2;
 const horizontalPointSeparation = 1.7320508076 * defaultTriangleEdgeLength;
 const randomness = 0.2;
-var spreadSize = 7;
+var currentSpreadSize = 7;
+
+const placedSpreads = [];
 
 const availableColorRanges = [
   {
@@ -84,17 +86,61 @@ canvas.addEventListener("touchmove", touchEvent, { passive: false });
 
 canvas.addEventListener("touchstart", touchEvent, { passive: false });
 
+canvas.addEventListener(
+  "mousedown",
+  (e) => {
+    switch (e.button) {
+      case 0:
+        // Left mouse button.
+        e.preventDefault();
+        placedSpreads.push({
+          x: cursor.x,
+          y: cursor.y,
+          size: currentSpreadSize,
+        });
+        break;
+      case 2:
+        e.preventDefault();
+        // Right mouse button.
+        // Get closest spread and remove it.
+        if (placedSpreads.length < 1) {
+          return;
+        }
+
+        var closestIndex = -1;
+        var closestDistance = Infinity;
+        for (spreadIndex in placedSpreads) {
+          var spread = placedSpreads[spreadIndex];
+          var distance =
+            Math.pow(spread.x - cursor.x, 2) + Math.pow(spread.y - cursor.y, 2);
+          if (distance < closestDistance) {
+            closestIndex = spreadIndex;
+            closestDistance = distance;
+          }
+        }
+        placedSpreads.splice(closestIndex, 1);
+        break;
+      default:
+        // Other mouse button (middle mainly).
+        break;
+    }
+  },
+  { passive: false }
+);
+
 function randomIntFromInterval(min, max) {
   // min and max included
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
+window.addEventListener("contextmenu", (e) => e.preventDefault(), false);
+
 canvas.addEventListener("wheel", (e) => {
   e.preventDefault();
-  if (e.deltaY > 0 && spreadSize < 20) {
-    spreadSize += 0.25;
-  } else if (spreadSize > 2) {
-    spreadSize -= 0.25;
+  if (e.deltaY > 0 && currentSpreadSize < 20) {
+    currentSpreadSize += 0.25;
+  } else if (currentSpreadSize > 2) {
+    currentSpreadSize -= 0.25;
   }
 });
 
@@ -146,12 +192,12 @@ function randomTint() {
 }
 
 // Return angle in radians where 0 is horizontal right and PI/2 is vertical down.
-function angleFromCursor(point) {
-  return Math.atan((point.y - cursor.y) / (point.x - cursor.x));
+function angleFromCentroid(point, centroid) {
+  return Math.atan((point.y - centroid.y) / (point.x - centroid.x));
 }
 
-function gaussianFromCursor(point) {
-  if (cursor.x === null || cursor.y === null) {
+function gaussianFromCentroid(point, centroid, spreadSize) {
+  if (centroid.x === null || centroid.y === null) {
     return 0;
   }
   const sd =
@@ -162,7 +208,7 @@ function gaussianFromCursor(point) {
   return Math.pow(
     Math.E,
     -1 *
-      ((Math.pow(point.x - cursor.x, 2) + Math.pow(point.y - cursor.y, 2)) /
+      ((Math.pow(point.x - centroid.x, 2) + Math.pow(point.y - centroid.y, 2)) /
         Math.pow(sd, 2))
   );
 }
@@ -172,27 +218,42 @@ function clampInt(val, min, max) {
 }
 
 function getColor(triangle) {
-  var averageDistance =
-    (gaussianFromCursor(triangle.points[0]) +
-      gaussianFromCursor(triangle.points[1]) +
-      gaussianFromCursor(triangle.points[2])) /
-    3;
+  // Get the closest average to the a centroid.
+  const maxGaussian = Math.max(
+    ...[{ ...cursor, size: currentSpreadSize }, ...placedSpreads].map(
+      (centroid) =>
+        (gaussianFromCentroid(
+          triangle.points[0],
+          { x: centroid.x, y: centroid.y },
+          centroid.size
+        ) +
+          gaussianFromCentroid(
+            triangle.points[1],
+            { x: centroid.x, y: centroid.y },
+            centroid.size
+          ) +
+          gaussianFromCentroid(
+            triangle.points[2],
+            { x: centroid.x, y: centroid.y },
+            centroid.size
+          )) /
+        3
+    )
+  );
 
-  const getColorValue = (distance, [fromVal, toVal]) => {
-    return toVal + distance * (fromVal - toVal);
+  const getColorValue = (closeness, [fromVal, toVal]) => {
+    return toVal + closeness * (fromVal - toVal);
   };
 
   return `rgb(
         ${clampInt(
-          getColorValue(averageDistance, [
-            colorRange.from.red,
-            colorRange.to.red,
-          ]) + triangle.tint.red,
+          getColorValue(maxGaussian, [colorRange.from.red, colorRange.to.red]) +
+            triangle.tint.red,
           0,
           255
         )},
         ${clampInt(
-          getColorValue(averageDistance, [
+          getColorValue(maxGaussian, [
             colorRange.from.green,
             colorRange.to.green,
           ]) + triangle.tint.green,
@@ -200,7 +261,7 @@ function getColor(triangle) {
           255
         )},
         ${clampInt(
-          getColorValue(averageDistance, [
+          getColorValue(maxGaussian, [
             colorRange.from.blue,
             colorRange.to.blue,
           ]) + triangle.tint.blue,
@@ -210,8 +271,12 @@ function getColor(triangle) {
 }
 
 function movePoint(point) {
-  const gaussianDistance = gaussianFromCursor(point);
-  const angle = Math.abs(angleFromCursor(point));
+  const gaussianDistance = gaussianFromCentroid(
+    point,
+    cursor,
+    currentSpreadSize
+  );
+  const angle = Math.abs(angleFromCentroid(point, cursor, currentSpreadSize));
   return {
     // X proportion is minimum at angle=PI/2 and 3PI/2.
     // X proportion is maximum at angle=0 and PI
